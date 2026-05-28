@@ -53,8 +53,8 @@ __headers,id,at,action,object_type,object_id,user_id,user_name,user_role,details
 
 __sheet,Report
 __headers,section,date,ref,name,qty,in,out,total,notes
-,Ringkasan,2026-05-28 18:21:05,TOTAL,Total Penjualan,,0,,0,
-,Ringkasan,2026-05-28 18:21:05,TOTAL,Total Pembelian,,,0,0,
-,Ringkasan,2026-05-28 18:21:05,STOK,Nilai Stok Modal,,,,208500,
-,Stok,2026-05-28 18:21:05,BRG-001,Contoh Kopi Sachet,35,,,52500,Minimal stok 5
-,Stok,2026-05-28 18:21:05,BRG-002,Contoh Gula 1kg,12,,,156000,Minimal stok 3
+,Ringkasan,2026-05-28 18:36:51,TOTAL,Total Penjualan,,0,,0,
+,Ringkasan,2026-05-28 18:36:51,TOTAL,Total Pembelian,,,0,0,
+,Ringkasan,2026-05-28 18:36:51,STOK,Nilai Stok Modal,,,,208500,
+,Stok,2026-05-28 18:36:51,BRG-001,Contoh Kopi Sachet,35,,,52500,Minimal stok 5
+,Stok,2026-05-28 18:36:51,BRG-002,Contoh Gula 1kg,12,,,156000,Minimal stok 3

@@ -867,12 +867,7 @@ dialog::backdrop {
   background: rgba(16, 185, 129, 0.08);
 }
 
-.so-tab-content {
-  display: none;
-}
-
-.so-tab-content.active {
-  display: block;
+.so-tab-content:not(.hidden) {
   animation: fadeIn 0.25s ease-out;
 }
 
