@@ -169,7 +169,9 @@ function requireAdminUi() {
   const manager = isManager();
   const developer = isDeveloper();
   $$(".nav-tabs button").forEach((button) => {
-    button.style.display = canView(button.dataset.view) ? "" : "none";
+    if (button.dataset.view) {
+      button.style.display = canView(button.dataset.view) ? "" : "none";
+    }
   });
   $$(".admin-only").forEach((item) => {
     item.style.display = manager ? "" : "none";
