@@ -1,0 +1,17 @@
+{
+  "name": "aplikasi-kasir-spreadsheet",
+  "version": "1.0.0",
+  "description": "Aplikasi kasir lokal berbasis browser dengan server Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5",
+    "pdfkit": "^0.15.0"
+  },
+  "license": "MIT"
+}

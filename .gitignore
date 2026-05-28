@@ -1,0 +1,7 @@
+node_modules/
+.env
+npm-debug.log*
+.DS_Store
+coverage/
+data/kasir_database.xlsx
+data/laporan_kasir.csv

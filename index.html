@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aplikasi Kasir Spreadsheet</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <main id="login-screen" class="login-shell">
+    <section class="login-panel">
+      <div class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <p id="login-app-name" class="eyebrow">Aplikasi Kasir Lokal</p>
+      <h1 id="login-store-name">Toko Anda</h1>
+      <p id="login-subtitle" class="hint">Masuk ke aplikasi kasir</p>
+      <form id="login-form" class="stack" autocomplete="off">
+        <label>
+          <span>Username</span>
+          <input id="login-username" autocomplete="off" placeholder="Masukkan username" required>
+        </label>
+        <label>
+          <span>Password</span>
+          <input id="login-password" type="password" autocomplete="off" placeholder="Masukkan password" required>
+        </label>
+        <button class="primary-btn" type="submit">Masuk</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="app-shell" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark small" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div>
+          <strong id="sidebar-store-name">Toko Anda</strong>
+          <span id="sidebar-store-subtitle">Database spreadsheet</span>
+        </div>
+      </div>
+      <nav class="nav-tabs" aria-label="Menu aplikasi">
+        <button data-view="dashboard" class="active">Dashboard</button>
+        <button data-view="sales">Penjualan</button>
+        <button data-view="purchases" class="admin-only">Pembelian</button>
+        <button data-view="returns" class="admin-only">Retur</button>
+        <button data-view="products">Barang</button>
+        <button data-view="suppliers" class="admin-only">Supplier</button>
+        <button data-view="reports" class="admin-only">Laporan</button>
+        <button data-view="stock-opname" class="admin-only">Stock Opname</button>
+        <button data-view="users" class="admin-only">User</button>
+        <button data-view="settings" class="admin-only">Pengaturan</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span id="current-user">-</span>
+        <button id="logout-btn" class="ghost-btn" type="button">Keluar</button>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p id="topbar-app-name" class="eyebrow">Aplikasi Kasir Lokal</p>
+          <h2 id="view-title">Dashboard</h2>
+        </div>
+        <div class="topbar-actions">
+          <a class="soft-btn admin-only" href="/download/database" target="_blank" rel="noopener">Unduh Excel</a>
+          <a class="soft-btn admin-only" href="/download/report" target="_blank" rel="noopener">Unduh Laporan</a>
+          <button id="refresh-btn" class="soft-btn" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section id="view-dashboard" class="view active">
+        <div class="metrics-grid">
+          <article class="metric">
+            <span>Penjualan hari ini</span>
+            <strong id="metric-sales-today">Rp 0</strong>
+          </article>
+          <article class="metric sensitive-only">
+            <span>Pembelian hari ini</span>
+            <strong id="metric-purchases-today">Rp 0</strong>
+          </article>
+          <article class="metric">
+            <span>Jenis barang</span>
+            <strong id="metric-products">0</strong>
+          </article>
+          <article class="metric">
+            <span>Total stok</span>
+            <strong id="metric-stock">0</strong>
+          </article>
+        </div>
+
+        <div class="split-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Stok Perlu Dicek</h3>
+            </div>
+            <div id="low-stock-list" class="list-empty">Tidak ada stok rendah.</div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Transaksi Terakhir</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="compact-table">
+                <thead><tr><th>No</th><th>Tanggal</th><th>Pelanggan</th><th>Total</th></tr></thead>
+                <tbody id="recent-sales-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-sales" class="view">
+        <div class="work-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Tambah Barang</h3>
+            </div>
+            <form id="sale-item-form" class="form-grid compact">
+              <label class="span-2">
+                <span>Cari Barang</span>
+                <input id="sale-product-search" placeholder="Cari nama, SKU, kategori">
+              </label>
+              <label class="span-2">
+                <span>Barang</span>
+                <select id="sale-product" required></select>
+              </label>
+              <label>
+                <span>Qty</span>
+                <input id="sale-qty" type="number" min="1" step="1" value="1" required>
+              </label>
+              <label>
+                <span>Harga</span>
+                <input id="sale-price" type="number" min="0" step="100" required>
+              </label>
+              <button class="primary-btn span-2" type="submit">Masukkan ke Keranjang</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Keranjang Penjualan</h3>
+              <button id="clear-sale-cart" class="ghost-btn" type="button">Kosongkan</button>
+            </div>
+            <div class="table-wrap cart-table">
+              <table>
+                <thead><tr><th>Barang</th><th>Qty</th><th>Harga</th><th>Jumlah</th><th></th></tr></thead>
+                <tbody id="sale-cart-table"></tbody>
+              </table>
+            </div>
+            <form id="sale-checkout-form" class="form-grid checkout">
+              <label>
+                <span>Pelanggan</span>
+                <input id="sale-customer" placeholder="Umum">
+              </label>
+              <label>
+                <span>Metode</span>
+                <select id="sale-method">
+                  <option>Tunai</option>
+                  <option>Transfer</option>
+                  <option>QRIS</option>
+                  <option>Kartu</option>
+                </select>
+              </label>
+              <label>
+                <span>Diskon</span>
+                <input id="sale-discount" type="number" min="0" step="100" value="0">
+              </label>
+              <label>
+                <span>Bayar</span>
+                <input id="sale-paid" type="number" min="0" step="100" value="0">
+              </label>
+              <div class="summary-box span-2">
+                <div><span>Subtotal</span><strong id="sale-subtotal">Rp 0</strong></div>
+                <div><span>Total</span><strong id="sale-total">Rp 0</strong></div>
+                <div><span>Kembali</span><strong id="sale-change">Rp 0</strong></div>
+              </div>
+              <button class="primary-btn span-2" type="submit">Simpan dan Cetak Nota</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-purchases" class="view">
+        <div class="work-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Barang Masuk</h3>
+            </div>
+            <div class="toolbar-actions admin-only">
+              <a class="soft-btn" href="/download/products-template" target="_blank" rel="noopener">Template Excel</a>
+              <button id="import-purchase-btn" class="soft-btn" type="button">Import Barang Excel</button>
+              <input id="purchase-import-file" class="hidden" type="file" accept=".xls,.xlsx,.csv">
+            </div>
+            <form id="purchase-item-form" class="form-grid compact">
+              <label class="span-2">
+                <span>Cari Barang</span>
+                <input id="purchase-product-search" placeholder="Cari nama, SKU, kategori">
+              </label>
+              <label class="span-2">
+                <span>Barang</span>
+                <select id="purchase-product" required></select>
+              </label>
+              <label>
+                <span>Qty</span>
+                <input id="purchase-qty" type="number" min="1" step="1" value="1" required>
+              </label>
+              <label>
+                <span>Harga modal</span>
+                <input id="purchase-cost" type="number" min="0" step="100" required>
+              </label>
+              <button class="primary-btn span-2" type="submit">Masukkan Pembelian</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Daftar Pembelian</h3>
+              <button id="clear-purchase-cart" class="ghost-btn" type="button">Kosongkan</button>
+            </div>
+            <div class="table-wrap cart-table">
+              <table>
+                <thead><tr><th>Barang</th><th>Qty</th><th>Modal</th><th>Jumlah</th><th></th></tr></thead>
+                <tbody id="purchase-cart-table"></tbody>
+              </table>
+            </div>
+            <form id="purchase-save-form" class="form-grid checkout">
+              <label class="span-2">
+                <span>Supplier</span>
+                <select id="purchase-supplier"></select>
+              </label>
+              <label class="span-2">
+                <span>Catatan</span>
+                <input id="purchase-notes" placeholder="Nomor faktur supplier, tempo, dll">
+              </label>
+              <div class="summary-box span-2">
+                <div><span>Total pembelian</span><strong id="purchase-total">Rp 0</strong></div>
+              </div>
+              <button class="primary-btn span-2" type="submit">Simpan Pembelian</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-returns" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Retur Barang</h3>
+            <div class="toolbar-actions admin-only">
+              <a class="soft-btn" href="/download/returns-template" target="_blank" rel="noopener">Template Excel</a>
+              <button id="import-return-btn" class="soft-btn" type="button">Import Retur Excel</button>
+              <input id="return-import-file" class="hidden" type="file" accept=".xls,.xlsx,.csv">
+            </div>
+          </div>
+          <form id="return-item-form" class="form-grid compact">
+            <label class="span-2">
+              <span>Cari Barang</span>
+              <input id="return-product-search" placeholder="Cari nama, SKU, kategori">
+            </label>
+            <label class="span-2">
+              <span>Barang</span>
+              <select id="return-product" required></select>
+            </label>
+            <label>
+              <span>Qty Retur</span>
+              <input id="return-qty" type="number" min="1" step="1" value="1" required>
+            </label>
+            <label class="span-2">
+              <span>Keterangan</span>
+              <input id="return-notes" placeholder="Alasan retur, kerusakan, dll">
+            </label>
+            <button class="primary-btn span-2" type="submit">Proses Retur</button>
+          </form>
+          <div class="table-wrap" style="margin-top: 20px;">
+            <table class="compact-table">
+              <thead><tr><th>Tanggal</th><th>Barang</th><th>Supplier</th><th>Qty</th><th>Keterangan</th></tr></thead>
+              <tbody id="return-history-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-products" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Data Barang</h3>
+            <div class="toolbar-actions admin-only">
+              <a id="product-template-link" class="soft-btn" href="/download/products-template" target="_blank" rel="noopener">Template Excel</a>
+              <button id="import-product-btn" class="soft-btn" type="button">Update/Import Excel</button>
+              <button id="new-product-btn" class="primary-btn" type="button">Tambah Barang</button>
+              <input id="product-import-file" class="hidden" type="file" accept=".xls,.xlsx,.csv">
+            </div>
+          </div>
+          <div class="filter-row">
+            <input id="product-search" placeholder="Cari nama, SKU, kategori">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>SKU</th><th>Nama</th><th>Kategori</th><th>Stok</th><th>Modal</th><th>Jual</th><th>Aksi</th></tr></thead>
+              <tbody id="products-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-suppliers" class="view">
+        <div class="split-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Tambah Supplier</h3>
+            </div>
+            <form id="supplier-form" class="stack">
+              <input type="hidden" id="supplier-id">
+              <label><span>Nama</span><input id="supplier-name" required></label>
+              <label><span>Telepon</span><input id="supplier-phone"></label>
+              <label><span>Alamat</span><input id="supplier-address"></label>
+              <label><span>Catatan</span><input id="supplier-notes"></label>
+              <button class="primary-btn" type="submit">Simpan Supplier</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Daftar Supplier</h3>
+            </div>
+            <div id="supplier-list" class="supplier-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-reports" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Laporan Keseluruhan</h3>
+            <div class="report-actions">
+              <input id="report-start" type="date">
+              <input id="report-end" type="date">
+              <button id="filter-report-btn" class="soft-btn" type="button">Tampilkan</button>
+            </div>
+          </div>
+          <div class="metrics-grid mini">
+            <article class="metric">
+              <span>Total penjualan</span>
+              <strong id="report-total-sales">Rp 0</strong>
+            </article>
+            <article class="metric">
+              <span>Total pembelian</span>
+              <strong id="report-total-purchases">Rp 0</strong>
+            </article>
+            <article class="metric">
+              <span>Selisih kas</span>
+              <strong id="report-net">Rp 0</strong>
+            </article>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Bagian</th><th>Tanggal</th><th>Ref</th><th>Nama</th><th>Qty</th><th>Masuk</th><th>Keluar</th><th>Total</th></tr></thead>
+              <tbody id="report-table"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel section-gap">
+          <div class="panel-head">
+            <h3>Riwayat Penjualan dan Pembatalan</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>No</th><th>Tanggal</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Aksi Admin</th></tr></thead>
+              <tbody id="sales-history-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-users" class="view">
+        <div class="split-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Tambah User</h3>
+            </div>
+            <form id="user-form" class="stack">
+              <input type="hidden" id="user-id">
+              <label><span>Nama</span><input id="user-name" required></label>
+              <label><span>Username</span><input id="user-username" required></label>
+              <label><span>Password</span><input id="user-password" type="password" placeholder="Isi untuk membuat/mengganti"></label>
+              <label>
+                <span>Role</span>
+                <select id="user-role">
+                  <option value="kasir">Kasir</option>
+                  <option value="admin">Admin</option>
+                  <option value="developer">Developer</option>
+                  <option value="owner">Owner</option>
+                </select>
+              </label>
+              <label>
+                <span>Status</span>
+                <select id="user-active">
+                  <option value="1">Aktif</option>
+                  <option value="0">Nonaktif</option>
+                </select>
+              </label>
+              <button class="primary-btn" type="submit">Simpan User</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Daftar User</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody id="users-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-stock-opname" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Stock Opname</h3>
+            <span class="tag">Admin</span>
+          </div>
+          
+          <!-- Start Button -->
+          <div id="so-start-section" class="form-grid">
+            <button id="start-stock-opname" class="primary-btn span-2" type="button">Mulai Stock Opname</button>
+          </div>
+          
+          <!-- Main SO Panel (Hidden initially) -->
+          <div id="so-main-panel" class="hidden" style="margin-top: 20px;">
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+              <button id="so-tab-manual" class="so-tab-btn active" data-tab="manual" type="button" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 500; border-bottom: 3px solid #111827; position: relative; bottom: -2px;">
+                📝 Input Manual (Scan)
+              </button>
+              <button id="so-tab-excel" class="so-tab-btn" data-tab="excel" type="button" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 500; color: #6b7280; position: relative; bottom: -2px;">
+                📊 Import Excel
+              </button>
+            </div>
+            
+            <!-- TAB 1: Input Manual -->
+            <div id="so-tab-manual-content" class="so-tab-content active">
+              <section class="panel">
+                <div class="panel-head">
+                  <h4>Input Manual - Pencarian Barang</h4>
+                </div>
+                
+                <!-- Search & Add -->
+                <div class="form-grid">
+                  <input id="so-product-search" type="text" placeholder="Cari barang (nama, SKU)..." style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;">
+                  <button id="so-add-product-btn" class="primary-btn" type="button" disabled>+ Tambah ke Keranjang</button>
+                </div>
+                
+                <!-- Search Results (Hidden) -->
+                <div id="so-search-results" class="hidden" style="margin-top: 10px; border: 1px solid #d1d5db; border-radius: 4px; max-height: 200px; overflow-y: auto; background: #f9fafb;">
+                  <div id="so-search-results-list"></div>
+                </div>
+                
+                <!-- Current Input Table -->
+                <div style="margin-top: 20px;">
+                  <h4>Barang yang Diinput</h4>
+                  <div class="table-wrap">
+                    <table class="compact-table">
+                      <thead>
+                        <tr>
+                          <th>Barang</th>
+                          <th>SKU</th>
+                          <th>Stok Sistem</th>
+                          <th>Input Fisik</th>
+                          <th>Selisih</th>
+                          <th>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody id="so-manual-table"></tbody>
+                    </table>
+                  </div>
+                  <p id="so-manual-empty" style="text-align: center; color: #9ca3af; padding: 20px;">Pilih barang untuk mulai input stok fisik</p>
+                </div>
+              </section>
+            </div>
+            
+            <!-- TAB 2: Import Excel -->
+            <div id="so-tab-excel-content" class="so-tab-content hidden">
+              <section class="panel">
+                <div class="panel-head">
+                  <h4>Import Excel - Upload File SO</h4>
+                </div>
+                
+                <!-- Template Download & Upload -->
+                <div class="form-grid">
+                  <button id="so-download-template-btn" class="secondary-btn span-2" type="button">📥 Unduh Template Excel</button>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 20px; background: #f0f9ff; border: 1px dashed #0284c7; border-radius: 4px; text-align: center;">
+                  <p style="margin: 0 0 15px 0; color: #0c4a6e;"><strong>Upload File Excel</strong></p>
+                  <input id="so-file-upload" type="file" accept=".xls,.xlsx,.csv" style="display: none;">
+                  <button id="so-file-upload-btn" class="primary-btn" type="button">📤 Pilih File Excel / CSV</button>
+                  <p id="so-file-name" style="margin-top: 10px; color: #6b7280; font-size: 14px;">-</p>
+                </div>
+                
+                <!-- Upload Results -->
+                <div id="so-excel-results" class="hidden" style="margin-top: 20px;">
+                  <section class="panel">
+                    <div class="panel-head">
+                      <h4>Hasil Upload</h4>
+                    </div>
+                    
+                    <!-- Status & Errors -->
+                    <div id="so-excel-message" style="padding: 15px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; margin-bottom: 15px;">
+                      <strong id="so-excel-status">0 item berhasil diproses</strong>
+                      <p id="so-excel-errors" style="margin-top: 10px; color: #dc2626; font-size: 14px; white-space: pre-line;"></p>
+                    </div>
+                    
+                    <!-- Preview Table -->
+                    <div class="table-wrap">
+                      <table class="compact-table">
+                        <thead>
+                          <tr>
+                            <th>Barang</th>
+                            <th>SKU</th>
+                            <th>Stok Sistem</th>
+                            <th>Input Fisik</th>
+                            <th>Selisih</th>
+                          </tr>
+                        </thead>
+                        <tbody id="so-excel-preview-table"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            </div>
+            <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px;">
+              <button id="so-review-btn" class="primary-btn" type="button">📋 Review & Finalisasi</button>
+              <button id="so-cancel-btn" class="danger-btn" type="button">Batal SO</button>
+            </div>
+            <!-- Summary & Finalization Section -->
+            <div id="so-summary-section" class="hidden" style="margin-top: 20px;">
+              <section class="panel">
+                <div class="panel-head">
+                  <h4>Ringkasan Variance & Finalisasi</h4>
+                </div>
+                
+                <!-- Metrics -->
+                <div class="metrics-grid">
+                  <article class="metric">
+                    <span>Total Item</span>
+                    <strong id="so-summary-items">0</strong>
+                  </article>
+                  <article class="metric">
+                    <span>Total Selisih (unit)</span>
+                    <strong id="so-summary-variance">0</strong>
+                  </article>
+                  <article class="metric">
+                    <span>Kelebihan (Rp)</span>
+                    <strong id="so-summary-surplus">Rp 0</strong>
+                  </article>
+                  <article class="metric">
+                    <span>Kekurangan (Rp)</span>
+                    <strong id="so-summary-shortage">Rp 0</strong>
+                  </article>
+                </div>
+                
+                <!-- Detail Variance Table -->
+                <div style="margin-top: 20px;">
+                  <h4>Detail Selisih</h4>
+                  <div class="table-wrap">
+                    <table class="compact-table">
+                      <thead>
+                        <tr>
+                          <th>Barang</th>
+                          <th>Stok Sistem</th>
+                          <th>Stok Fisik</th>
+                          <th>Selisih</th>
+                          <th>Nilai (Rp)</th>
+                        </tr>
+                      </thead>
+                      <tbody id="so-summary-table"></tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <!-- Notes & Action -->
+                <div style="margin-top: 20px;">
+                  <textarea id="so-notes" placeholder="Keterangan tambahan (opsional)..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; min-height: 60px;"></textarea>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                  <button id="so-reset-btn" class="secondary-btn" type="button">← Kembali Ubah</button>
+                  <button id="so-finalize-btn" class="primary-btn" type="button">✓ Selesaikan SO</button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </section>
+
+
+      <section id="view-settings" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Pengaturan Aplikasi</h3>
+            <span class="tag">Developer</span>
+          </div>
+          <form id="settings-form" class="form-grid">
+            <label>
+              <span>Nama toko</span>
+              <input id="settings-store-name" required>
+            </label>
+            <label>
+              <span>Nama aplikasi</span>
+              <input id="settings-app-name" required>
+            </label>
+            <label>
+              <span>Subjudul toko</span>
+              <input id="settings-store-subtitle" required>
+            </label>
+            <label>
+              <span>Nama toko di nota</span>
+              <input id="settings-receipt-store-name" required>
+            </label>
+            <button class="primary-btn span-2" type="submit">Simpan Pengaturan</button>
+          </form>
+        </section>
+
+        <section class="panel developer-settings">
+          <div class="panel-head">
+            <h3>Developer Settings</h3>
+            <span class="tag">Developer Only</span>
+          </div>
+          
+          <div class="form-grid">
+            <fieldset>
+              <legend>Environment</legend>
+              <label class="checkbox">
+                <input type="checkbox" id="dev-maintenance-mode">
+                <span>Maintenance Mode</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" id="dev-debug-mode">
+                <span>Debug Mode</span>
+              </label>
+            </fieldset>
+            
+            <fieldset>
+              <legend>Database Control</legend>
+              <button id="dev-auto-backup" class="soft-btn" type="button">Auto-Backup</button>
+              <button id="dev-export-sql" class="soft-btn" type="button">Ekspor SQL</button>
+              <button id="dev-export-excel" class="soft-btn" type="button">Ekspor Excel</button>
+              <button id="dev-restore-db" class="danger-btn" type="button">Restore Database</button>
+            </fieldset>
+            
+            <fieldset>
+              <legend>Security</legend>
+              <label>
+                <span>Session Timeout (menit)</span>
+                <input id="dev-session-timeout" type="number" min="5" max="480" value="60">
+              </label>
+              <button id="dev-force-kick-all" class="danger-btn" type="button">Force Kick All Users</button>
+            </fieldset>
+            
+            <fieldset>
+              <legend>Performance</legend>
+              <label>
+                <span>Global Pagination Limit</span>
+                <input id="dev-pagination-limit" type="number" min="10" max="1000" value="100">
+              </label>
+            </fieldset>
+            
+            <fieldset>
+              <legend>Integrasi</legend>
+              <label>
+                <span>API Key (Gateway/Notifikasi)</span>
+                <input id="dev-api-key" type="password" placeholder="Masukkan API key aman">
+              </label>
+            </fieldset>
+            
+            <button id="dev-save-settings" class="primary-btn span-2" type="submit">Simpan Developer Settings</button>
+          </div>
+        </section>
+      </section>
+    </section>
+  </div>
+
+  <dialog id="product-dialog">
+    <form id="product-form" method="dialog" class="dialog-card">
+      <div class="panel-head">
+        <h3 id="product-dialog-title">Tambah Barang</h3>
+        <button class="ghost-btn" value="cancel" type="button" id="close-product-dialog">Tutup</button>
+      </div>
+      <input type="hidden" id="product-id">
+      <div class="form-grid">
+        <label><span>SKU</span><input id="product-sku" placeholder="Otomatis jika kosong"></label>
+        <label><span>Nama barang</span><input id="product-name" required></label>
+        <label><span>Kategori</span><input id="product-category"></label>
+        <label><span>Satuan</span><input id="product-unit" value="pcs"></label>
+        <label><span>Stok</span><input id="product-stock" type="number" min="0" step="1" value="0"></label>
+        <label><span>Minimal stok</span><input id="product-min-stock" type="number" min="0" step="1" value="0"></label>
+        <label><span>Harga modal</span><input id="product-buy-price" type="number" min="0" step="100" value="0"></label>
+        <label><span>Harga jual</span><input id="product-sell-price" type="number" min="0" step="100" value="0"></label>
+        <label class="span-2"><span>Supplier</span><select id="product-supplier"></select></label>
+      </div>
+      <button class="primary-btn" type="submit">Simpan Barang</button>
+    </form>
+  </dialog>
+
+  <!-- BAGIAN 3: Stock Opname Result Modal -->
+  <dialog id="so-result-modal">
+    <form method="dialog" class="dialog-card">
+      <div class="panel-head">
+        <h3>📋 Laporan Hasil Stock Opname</h3>
+        <button class="ghost-btn" value="cancel" type="button">Tutup</button>
+      </div>
+      
+      <!-- Header Info -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 16px; background: #f0fdf4; border-radius: 6px;">
+        <div>
+          <small style="color: #6b7280; font-weight: 600;">User Pelaksana</small>
+          <strong id="so-result-user">-</strong>
+          <small style="display: block; color: #6b7280;">Role: <span id="so-result-role">-</span></small>
+        </div>
+        <div>
+          <small style="color: #6b7280; font-weight: 600;">Waktu Finalisasi</small>
+          <strong id="so-result-date">-</strong>
+        </div>
+        <div>
+          <small style="color: #6b7280; font-weight: 600;">Metode</small>
+          <strong id="so-result-method">-</strong>
+        </div>
+        <div>
+          <small style="color: #6b7280; font-weight: 600;">Total Item</small>
+          <strong id="so-result-items">0</strong>
+        </div>
+      </div>
+      
+      <!-- Summary -->
+      <div class="metrics-grid mini">
+        <article class="metric">
+          <span>Total Selisih (unit)</span>
+          <strong id="so-result-variance">0</strong>
+        </article>
+        <article class="metric">
+          <span>Kelebihan (Rp)</span>
+          <strong id="so-result-surplus">Rp 0</strong>
+        </article>
+        <article class="metric">
+          <span>Kekurangan (Rp)</span>
+          <strong id="so-result-shortage">Rp 0</strong>
+        </article>
+      </div>
+      
+      <!-- Detail Table -->
+      <div>
+        <h4 style="margin: 20px 0 10px 0;">Detail Barang dengan Selisih</h4>
+        <div class="table-wrap">
+          <table class="compact-table">
+            <thead>
+              <tr>
+                <th>Barang</th>
+                <th>SKU</th>
+                <th>Sistem</th>
+                <th>Fisik</th>
+                <th>Selisih</th>
+                <th>Nilai (Rp)</th>
+              </tr>
+            </thead>
+            <tbody id="so-result-table"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Notes -->
+      <div id="so-result-notes-section" style="display: none;">
+        <h4 style="margin: 20px 0 10px 0;">Keterangan</h4>
+        <p id="so-result-notes" style="padding: 12px; background: #f9fafb; border-left: 3px solid var(--brand); margin: 0;"></p>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button id="so-result-download-pdf" class="primary-btn" type="button">📥 Unduh PDF</button>
+        <button class="secondary-btn" value="ok" type="submit">Selesai</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input type="file" id="dev-restore-file" accept=".xlsx,.csv" style="display: none;">
+  <input type="file" id="return-import-file" accept=".xlsx,.csv" style="display: none;">
+  <input type="file" id="purchase-import-file" accept=".xlsx,.csv" style="display: none;">
+  <input type="file" id="product-import-file" accept=".xlsx,.csv" style="display: none;">
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+﻿__sheet,Users
+__headers,id,username,password_hash,role,name,active,created_at
+,1,developer,e00884b83db1cc66573a6cb329603ed1b152f326cbb5183a8effaa36934d352a,developer,Developer,1,2026-05-28 18:19:42
+,2,admin,240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9,admin,Admin Toko,1,2026-05-28 18:19:42
+,3,kasir,f02b7c1e519e4fa436147f7e1399974f9510aa9c8e0cb8be29151eb540f9d214,kasir,Kasir,1,2026-05-28 18:19:42
+
+__sheet,Settings
+__headers,key,value,updated_at
+,store_name,Toko Anda,2026-05-28 18:19:42
+,store_subtitle,Database spreadsheet,2026-05-28 18:19:42
+,app_name,Aplikasi Kasir Lokal,2026-05-28 18:19:42
+,receipt_store_name,TOKO ANDA,2026-05-28 18:19:42
+
+__sheet,Products
+__headers,id,sku,name,category,unit,stock,min_stock,buy_price,sell_price,supplier_id,updated_at
+,1,BRG-001,Contoh Kopi Sachet,Minuman,pcs,35,5,1500,2500,1,2026-05-28 18:21:05
+,2,BRG-002,Contoh Gula 1kg,Sembako,pcs,12,3,13000,15000,1,2026-05-28 18:21:05
+
+__sheet,Suppliers
+__headers,id,name,phone,address,notes,created_at
+,1,Supplier Utama,08xxxxxxxxxx,Alamat supplier,"Contoh data, silakan ubah.",2026-05-28 18:19:42
+
+__sheet,Sales
+__headers,id,invoice_no,date,customer,subtotal,discount,total,paid,change,payment_method,user_id,notes,status,canceled_at,canceled_by,cancel_reason
+
+__sheet,SaleItems
+__headers,id,sale_id,product_id,sku,name,qty,price,subtotal,batch_id,batch_allocations
+
+__sheet,Purchases
+__headers,id,purchase_no,date,supplier_id,supplier_name,total,user_id,notes
+
+__sheet,PurchaseItems
+__headers,id,purchase_id,product_id,sku,name,qty,cost,subtotal,batch_id,batch_date
+
+__sheet,Returns
+__headers,id,return_no,date,product_id,sku,name,qty,user_id,notes,supplier_id,supplier_name
+
+__sheet,StockOpname
+__headers,id,date,user_id,user_name,total_variance,surplus_value,shortage_value,notes
+
+__sheet,StockOpnameHistory
+__headers,id,date,user_id,user_name,user_role,total_variance,surplus_value,shortage_value,method,notes,finalized_at
+,1,2026-05-28 18:21:05,2,Admin Toko,admin,12,41000,0,excel,Uji coba integrasi sistem otomatis,2026-05-28 18:21:05
+
+__sheet,StockOpnameItems
+__headers,id,stock_opname_id,product_id,sku,name,system_stock,physical_stock,variance,variance_value,buy_price
+,1,1,1,BRG-001,Contoh Kopi Sachet,25,35,10,15000,1500
+,2,1,2,BRG-002,Contoh Gula 1kg,10,12,2,26000,13000
+
+__sheet,AuditLogs
+__headers,id,at,action,object_type,object_id,user_id,user_name,user_role,details
+,1,2026-05-28 18:21:05,FINALIZE_STOCK_OPNAME,StockOpnameHistory,1,2,Admin Toko,admin,"{""method"":""excel"",""total_items"":2,""notes"":""Uji coba integrasi sistem otomatis""}"
+
+__sheet,Report
+__headers,section,date,ref,name,qty,in,out,total,notes
+,Ringkasan,2026-05-28 18:21:05,TOTAL,Total Penjualan,,0,,0,
+,Ringkasan,2026-05-28 18:21:05,TOTAL,Total Pembelian,,,0,0,
+,Ringkasan,2026-05-28 18:21:05,STOK,Nilai Stok Modal,,,,208500,
+,Stok,2026-05-28 18:21:05,BRG-001,Contoh Kopi Sachet,35,,,52500,Minimal stok 5
+,Stok,2026-05-28 18:21:05,BRG-002,Contoh Gula 1kg,12,,,156000,Minimal stok 3
