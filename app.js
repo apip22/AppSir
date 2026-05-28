@@ -189,6 +189,8 @@ function showApp() {
   $("#login-screen").classList.add("hidden");
   $("#app-shell").classList.remove("hidden");
   $("#current-user").textContent = `${state.user?.name || state.user?.username || "-"} (${state.user?.role || "-"})`;
+  if ($("#mobile-current-user")) $("#mobile-current-user").textContent = state.user?.name || state.user?.username || "-";
+  if ($("#mobile-current-role")) $("#mobile-current-role").textContent = state.user?.role || "-";
   setDownloadLinks();
   applySettings();
   requireAdminUi();
@@ -207,6 +209,8 @@ function applySettings() {
   $("#sidebar-store-name").textContent = storeName;
   $("#sidebar-store-subtitle").textContent = storeSubtitle;
   $("#topbar-app-name").textContent = appName;
+  if ($("#mobile-store-name")) $("#mobile-store-name").textContent = storeName;
+  if ($("#mobile-store-subtitle")) $("#mobile-store-subtitle").textContent = storeSubtitle;
   if ($("#login-app-name")) $("#login-app-name").textContent = appName;
   if ($("#login-store-name")) $("#login-store-name").textContent = storeName;
   if ($("#login-subtitle")) $("#login-subtitle").textContent = `Masuk ke ${appName}`;
@@ -1791,8 +1795,58 @@ function bindEvents() {
   });
 }
 
+function bindMobileEvents() {
+  const mobileRefreshBtn = $("#mobile-refresh-btn");
+  if (mobileRefreshBtn) {
+    mobileRefreshBtn.addEventListener("click", () => {
+      const desktopRefresh = $("#refresh-btn");
+      if (desktopRefresh) desktopRefresh.click();
+    });
+  }
+
+  const mobileLogoutBtn = $("#mobile-logout-btn");
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener("click", () => {
+      const desktopLogout = $("#logout-btn");
+      if (desktopLogout) desktopLogout.click();
+    });
+  }
+
+  const mobileMoreBtn = $("#mobile-more-btn");
+  const mobileDrawer = $("#mobile-drawer");
+  const closeDrawerBtn = $("#close-drawer-btn");
+
+  if (mobileMoreBtn && mobileDrawer) {
+    mobileMoreBtn.addEventListener("click", () => {
+      mobileDrawer.classList.add("open");
+    });
+  }
+
+  if (closeDrawerBtn && mobileDrawer) {
+    closeDrawerBtn.addEventListener("click", () => {
+      mobileDrawer.classList.remove("open");
+    });
+  }
+
+  if (mobileDrawer) {
+    mobileDrawer.addEventListener("click", (e) => {
+      if (e.target === mobileDrawer) {
+        mobileDrawer.classList.remove("open");
+      }
+    });
+  }
+
+  const drawerButtons = document.querySelectorAll("#mobile-drawer .nav-tabs button");
+  drawerButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (mobileDrawer) mobileDrawer.classList.remove("open");
+    });
+  });
+}
+
 async function boot() {
   bindEvents();
+  bindMobileEvents();
   applySettings();
   if (!state.token) {
     showLogin();

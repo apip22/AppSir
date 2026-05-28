@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Aplikasi Kasir Spreadsheet</title>
   <link rel="stylesheet" href="/styles.css">
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -32,6 +33,21 @@
   </main>
 
   <div id="app-shell" class="app-shell hidden">
+    <!-- Mobile Top Header -->
+    <header class="mobile-header">
+      <div class="mobile-brand">
+        <div class="brand-mark small" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div>
+          <strong id="mobile-store-name">Toko Anda</strong>
+          <span id="mobile-store-subtitle">Database spreadsheet</span>
+        </div>
+      </div>
+      <div class="mobile-header-actions">
+        <button id="mobile-refresh-btn" class="soft-btn icon-only" type="button" title="Perbarui Data"><i class="bx bx-refresh"></i></button>
+      </div>
+    </header>
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="brand-mark small" aria-hidden="true">
@@ -43,16 +59,16 @@
         </div>
       </div>
       <nav class="nav-tabs" aria-label="Menu aplikasi">
-        <button data-view="dashboard" class="active">Dashboard</button>
-        <button data-view="sales">Penjualan</button>
-        <button data-view="purchases" class="admin-only">Pembelian</button>
-        <button data-view="returns" class="admin-only">Retur</button>
-        <button data-view="products">Barang</button>
-        <button data-view="suppliers" class="admin-only">Supplier</button>
-        <button data-view="reports" class="admin-only">Laporan</button>
-        <button data-view="stock-opname" class="admin-only">Stock Opname</button>
-        <button data-view="users" class="admin-only">User</button>
-        <button data-view="settings" class="admin-only">Pengaturan</button>
+        <button data-view="dashboard" class="active"><i class="bx bxs-dashboard"></i> <span>Dashboard</span></button>
+        <button data-view="sales"><i class="bx bxs-cart"></i> <span>Penjualan</span></button>
+        <button data-view="purchases" class="admin-only"><i class="bx bxs-package"></i> <span>Pembelian</span></button>
+        <button data-view="returns" class="admin-only"><i class="bx bx-undo"></i> <span>Retur</span></button>
+        <button data-view="products"><i class="bx bxs-box"></i> <span>Barang</span></button>
+        <button data-view="suppliers" class="admin-only"><i class="bx bxs-truck"></i> <span>Supplier</span></button>
+        <button data-view="reports" class="admin-only"><i class="bx bxs-report"></i> <span>Laporan</span></button>
+        <button data-view="stock-opname" class="admin-only"><i class="bx bxs-notepad"></i> <span>Stock Opname</span></button>
+        <button data-view="users" class="admin-only"><i class="bx bxs-user-detail"></i> <span>User</span></button>
+        <button data-view="settings" class="admin-only"><i class="bx bxs-cog"></i> <span>Pengaturan</span></button>
       </nav>
       <div class="sidebar-footer">
         <span id="current-user">-</span>
@@ -684,6 +700,59 @@
         </section>
       </section>
     </section>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav nav-tabs" aria-label="Menu Mobile">
+      <button data-view="dashboard" class="active">
+        <i class="bx bxs-dashboard"></i>
+        <span>Dashboard</span>
+      </button>
+      <button data-view="sales">
+        <i class="bx bxs-cart"></i>
+        <span>Penjualan</span>
+      </button>
+      <button data-view="products">
+        <i class="bx bxs-box"></i>
+        <span>Barang</span>
+      </button>
+      <button data-view="reports" class="admin-only">
+        <i class="bx bxs-report"></i>
+        <span>Laporan</span>
+      </button>
+      <button id="mobile-more-btn" type="button">
+        <i class="bx bx-grid-alt"></i>
+        <span>Lainnya</span>
+      </button>
+    </nav>
+
+    <!-- Mobile Navigation Drawer (Slide-up Sheet) -->
+    <div id="mobile-drawer" class="mobile-drawer-overlay">
+      <div class="mobile-drawer-content">
+        <div class="drawer-header">
+          <div class="drawer-handle"></div>
+          <h3>Menu Lainnya</h3>
+          <button id="close-drawer-btn" class="ghost-btn icon-only" type="button"><i class="bx bx-x"></i></button>
+        </div>
+        <div class="drawer-body nav-tabs">
+          <button data-view="purchases" class="admin-only"><i class="bx bxs-package"></i> Pembelian</button>
+          <button data-view="returns" class="admin-only"><i class="bx bx-undo"></i> Retur</button>
+          <button data-view="suppliers" class="admin-only"><i class="bx bxs-truck"></i> Supplier</button>
+          <button data-view="stock-opname" class="admin-only"><i class="bx bxs-notepad"></i> Stock Opname</button>
+          <button data-view="users" class="admin-only"><i class="bx bxs-user-detail"></i> User</button>
+          <button data-view="settings" class="admin-only"><i class="bx bxs-cog"></i> Pengaturan</button>
+        </div>
+        <div class="drawer-footer">
+          <div class="drawer-user-info">
+            <i class="bx bxs-user-circle"></i>
+            <div>
+              <span id="mobile-current-user">-</span>
+              <small id="mobile-current-role">Kasir</small>
+            </div>
+          </div>
+          <button id="mobile-logout-btn" class="danger-btn" type="button"><i class="bx bx-log-out"></i> Keluar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <dialog id="product-dialog">
