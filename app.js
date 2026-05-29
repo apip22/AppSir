@@ -223,6 +223,27 @@ function applySettings() {
     $("#settings-app-name").value = appName;
     $("#settings-receipt-store-name").value = settings.receipt_store_name || storeName.toUpperCase();
   }
+
+  // Set QRIS image field if user is developer
+  if ($("#settings-qris-label")) {
+    const isDev = state.user?.role === "developer";
+    if (isDev) {
+      $("#settings-qris-label").style.display = "block";
+      const qrisImg = settings.qris_image || "";
+      if (qrisImg) {
+        $("#settings-qris-preview").src = qrisImg;
+        $("#settings-qris-preview").style.display = "block";
+        $("#settings-qris-remove-btn").classList.remove("hidden");
+      } else {
+        $("#settings-qris-preview").src = "";
+        $("#settings-qris-preview").style.display = "none";
+        $("#settings-qris-remove-btn").classList.add("hidden");
+      }
+    } else {
+      $("#settings-qris-label").style.display = "none";
+    }
+  }
+
   renderDeveloperSettings();
 }
 
@@ -621,6 +642,39 @@ function formNumber(id) {
 }
 
 function bindEvents() {
+  // Theme Toggle Logic
+  const initTheme = () => {
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    updateThemeIcon(currentTheme);
+  };
+
+  const updateThemeIcon = (theme) => {
+    const iconClass = theme === "dark" ? "bx-sun" : "bx-moon";
+    const buttons = ["#theme-toggle-btn", "#login-theme-toggle-btn", "#mobile-theme-toggle-btn"];
+    buttons.forEach(id => {
+      const btn = $(id);
+      if (btn) {
+        const icon = btn.querySelector("i");
+        if (icon) icon.className = `bx ${iconClass}`;
+      }
+    });
+  };
+
+  const toggleTheme = () => {
+    const theme = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+    updateThemeIcon(theme);
+  };
+
+  ["#theme-toggle-btn", "#login-theme-toggle-btn", "#mobile-theme-toggle-btn"].forEach(id => {
+    const btn = $(id);
+    if (btn) btn.addEventListener("click", toggleTheme);
+  });
+
+  initTheme();
+
   $("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
@@ -713,6 +767,8 @@ function bindEvents() {
   $("#clear-sale-cart").addEventListener("click", () => {
     state.saleCart = [];
     renderSaleCart();
+    $("#sale-method").value = "Tunai";
+    $("#qris-container").classList.add("hidden");
   });
 
   $("#sale-checkout-form").addEventListener("submit", async (event) => {
@@ -736,11 +792,33 @@ function bindEvents() {
       $("#sale-customer").value = "";
       $("#sale-discount").value = 0;
       $("#sale-paid").value = 0;
+      $("#sale-method").value = "Tunai";
+      $("#qris-container").classList.add("hidden");
       await loadData();
       window.open(`/receipt/${payload.sale.id}${tokenParam()}`, "_blank", "width=420,height=680");
       showToast("Penjualan tersimpan.");
     } catch (error) {
       showToast(error.message, true);
+    }
+  });
+
+  // Handle QRIS payment option selection in checkout
+  $("#sale-method").addEventListener("change", () => {
+    const val = $("#sale-method").value;
+    if (val === "QRIS") {
+      const qrisImg = state.settings?.qris_image || "";
+      if (qrisImg) {
+        $("#qris-img").src = qrisImg;
+        $("#qris-img").style.display = "inline-block";
+        $("#qris-empty-msg").style.display = "none";
+      } else {
+        $("#qris-img").src = "";
+        $("#qris-img").style.display = "none";
+        $("#qris-empty-msg").style.display = "block";
+      }
+      $("#qris-container").classList.remove("hidden");
+    } else {
+      $("#qris-container").classList.add("hidden");
     }
   });
 
@@ -1028,14 +1106,18 @@ function bindEvents() {
   $("#settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
+      const bodyPayload = {
+        store_name: $("#settings-store-name").value,
+        store_subtitle: $("#settings-store-subtitle").value,
+        app_name: $("#settings-app-name").value,
+        receipt_store_name: $("#settings-receipt-store-name").value,
+      };
+      if (state.user?.role === "developer") {
+        bodyPayload.qris_image = state.settings.qris_image || "";
+      }
       const payload = await api("/api/settings", {
         method: "POST",
-        body: {
-          store_name: $("#settings-store-name").value,
-          store_subtitle: $("#settings-store-subtitle").value,
-          app_name: $("#settings-app-name").value,
-          receipt_store_name: $("#settings-receipt-store-name").value,
-        },
+        body: bodyPayload,
       });
       state.settings = { ...state.settings, ...(payload.settings || {}) };
       localStorage.setItem("kasir_settings", JSON.stringify(state.settings));
@@ -1044,6 +1126,35 @@ function bindEvents() {
     } catch (error) {
       showToast(error.message, true);
     }
+  });
+
+  // Settings QRIS Image Upload Event Handlers
+  $("#settings-qris-upload-btn").addEventListener("click", () => {
+    $("#settings-qris-file").click();
+  });
+
+  $("#settings-qris-file").addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64 = await fileToBase64(file);
+      $("#settings-qris-preview").src = base64;
+      $("#settings-qris-preview").style.display = "block";
+      $("#settings-qris-remove-btn").classList.remove("hidden");
+      if (!state.settings) state.settings = {};
+      state.settings.qris_image = base64; // Store in local state settings
+    } catch (error) {
+      showToast("Gagal membaca file gambar.", true);
+    }
+  });
+
+  $("#settings-qris-remove-btn").addEventListener("click", () => {
+    $("#settings-qris-file").value = "";
+    $("#settings-qris-preview").src = "";
+    $("#settings-qris-preview").style.display = "none";
+    $("#settings-qris-remove-btn").classList.add("hidden");
+    if (!state.settings) state.settings = {};
+    state.settings.qris_image = ""; // Clear in local state settings
   });
 
   $("#filter-report-btn").addEventListener("click", async () => {

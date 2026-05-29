@@ -3,6 +3,7 @@ __headers,id,username,password_hash,role,name,active,created_at
 ,1,developer,e00884b83db1cc66573a6cb329603ed1b152f326cbb5183a8effaa36934d352a,developer,Developer,1,2026-05-28 18:19:42
 ,2,admin,240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9,admin,Admin Toko,1,2026-05-28 18:19:42
 ,3,kasir,f02b7c1e519e4fa436147f7e1399974f9510aa9c8e0cb8be29151eb540f9d214,kasir,Kasir,1,2026-05-28 18:19:42
+,4,pip22,a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3,developer,apip,1,2026-05-29 16:11:13
 
 __sheet,Settings
 __headers,key,value,updated_at
@@ -13,8 +14,8 @@ __headers,key,value,updated_at
 
 __sheet,Products
 __headers,id,sku,name,category,unit,stock,min_stock,buy_price,sell_price,supplier_id,updated_at
-,1,BRG-001,Contoh Kopi Sachet,Minuman,pcs,35,5,1500,2500,1,2026-05-28 18:21:05
-,2,BRG-002,Contoh Gula 1kg,Sembako,pcs,12,3,13000,15000,1,2026-05-28 18:21:05
+,1,BRG-001,Contoh Kopi Sachet,Minuman,pcs,27,5,1500,2500,1,2026-05-29 16:13:25
+,2,BRG-002,Contoh Gula 1kg,Sembako,pcs,2,3,13000,15000,1,2026-05-29 16:13:25
 
 __sheet,Suppliers
 __headers,id,name,phone,address,notes,created_at
@@ -22,15 +23,24 @@ __headers,id,name,phone,address,notes,created_at
 
 __sheet,Sales
 __headers,id,invoice_no,date,customer,subtotal,discount,total,paid,change,payment_method,user_id,notes,status,canceled_at,canceled_by,cancel_reason
+,1,INV-20260529-0001,2026-05-29 16:11:56,Umum,2500,0,2500,2500,0,Tunai,1,,active,,,
+,2,INV-20260529-0002,2026-05-29 16:13:25,Umum,167500,0,167500,167500,0,QRIS,1,,active,,,
 
 __sheet,SaleItems
 __headers,id,sale_id,product_id,sku,name,qty,price,subtotal,batch_id,batch_allocations
+,1,1,1,BRG-001,Contoh Kopi Sachet,1,2500,2500,BATCH-UNTRACKED-1,"[{""batch_id"":""BATCH-UNTRACKED-1"",""qty"":1,""cost"":1500}]"
+,2,2,1,BRG-001,Contoh Kopi Sachet,1,2500,2500,BATCH-UNTRACKED-1,"[{""batch_id"":""BATCH-UNTRACKED-1"",""qty"":1,""cost"":1500}]"
+,3,2,1,BRG-001,Contoh Kopi Sachet,1,2500,2500,BATCH-UNTRACKED-1,"[{""batch_id"":""BATCH-UNTRACKED-1"",""qty"":1,""cost"":1500}]"
+,4,2,1,BRG-001,Contoh Kopi Sachet,5,2500,12500,BATCH-UNTRACKED-1,"[{""batch_id"":""BATCH-UNTRACKED-1"",""qty"":5,""cost"":1500}]"
+,5,2,2,BRG-002,Contoh Gula 1kg,10,15000,150000,BATCH-UNTRACKED-2,"[{""batch_id"":""BATCH-UNTRACKED-2"",""qty"":10,""cost"":13000}]"
 
 __sheet,Purchases
 __headers,id,purchase_no,date,supplier_id,supplier_name,total,user_id,notes
 
 __sheet,PurchaseItems
 __headers,id,purchase_id,product_id,sku,name,qty,cost,subtotal,batch_id,batch_date
+,1,0,1,BRG-001,Contoh Kopi Sachet,27,1500,52500,BATCH-UNTRACKED-1,2026-05-29 16:11:56
+,2,0,2,BRG-002,Contoh Gula 1kg,2,13000,156000,BATCH-UNTRACKED-2,2026-05-29 16:13:25
 
 __sheet,Returns
 __headers,id,return_no,date,product_id,sku,name,qty,user_id,notes,supplier_id,supplier_name
@@ -53,8 +63,10 @@ __headers,id,at,action,object_type,object_id,user_id,user_name,user_role,details
 
 __sheet,Report
 __headers,section,date,ref,name,qty,in,out,total,notes
-,Ringkasan,2026-05-28 18:36:51,TOTAL,Total Penjualan,,0,,0,
-,Ringkasan,2026-05-28 18:36:51,TOTAL,Total Pembelian,,,0,0,
-,Ringkasan,2026-05-28 18:36:51,STOK,Nilai Stok Modal,,,,208500,
-,Stok,2026-05-28 18:36:51,BRG-001,Contoh Kopi Sachet,35,,,52500,Minimal stok 5
-,Stok,2026-05-28 18:36:51,BRG-002,Contoh Gula 1kg,12,,,156000,Minimal stok 3
+,Ringkasan,2026-05-29 16:26:34,TOTAL,Total Penjualan,,170000,,170000,
+,Ringkasan,2026-05-29 16:26:34,TOTAL,Total Pembelian,,,0,0,
+,Ringkasan,2026-05-29 16:26:34,STOK,Nilai Stok Modal,,,,66500,
+,Penjualan,2026-05-29 16:11:56,INV-20260529-0001,Umum,,2500,,2500,Tunai
+,Penjualan,2026-05-29 16:13:25,INV-20260529-0002,Umum,,167500,,167500,QRIS
+,Stok,2026-05-29 16:26:34,BRG-001,Contoh Kopi Sachet,27,,,40500,Minimal stok 5
+,Stok,2026-05-29 16:26:34,BRG-002,Contoh Gula 1kg,2,,,26000,Minimal stok 3

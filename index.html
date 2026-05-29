@@ -6,11 +6,20 @@
   <title>Aplikasi Kasir Spreadsheet</title>
   <link rel="stylesheet" href="/styles.css">
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <script>
+    (function() {
+      const theme = localStorage.getItem("theme") || "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <main id="login-screen" class="login-shell">
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 10;">
+      <button id="login-theme-toggle-btn" class="soft-btn icon-only" type="button" aria-label="Toggle Theme"><i class="bx bx-sun"></i></button>
+    </div>
     <section class="login-panel">
       <div class="brand-mark" aria-hidden="true">
         <span></span><span></span><span></span>
@@ -44,7 +53,8 @@
           <span id="mobile-store-subtitle">Database spreadsheet</span>
         </div>
       </div>
-      <div class="mobile-header-actions">
+      <div class="mobile-header-actions" style="display: flex; gap: 8px;">
+        <button id="mobile-theme-toggle-btn" class="soft-btn icon-only" type="button" aria-label="Toggle Theme"><i class="bx bx-sun"></i></button>
         <button id="mobile-refresh-btn" class="soft-btn icon-only" type="button" title="Perbarui Data"><i class="bx bx-refresh"></i></button>
       </div>
     </header>
@@ -83,6 +93,7 @@
           <h2 id="view-title">Dashboard</h2>
         </div>
         <div class="topbar-actions">
+          <button id="theme-toggle-btn" class="soft-btn icon-only" type="button" aria-label="Toggle Theme"><i class="bx bx-sun"></i></button>
           <a class="soft-btn admin-only" href="/download/database" target="_blank" rel="noopener">Unduh Excel</a>
           <a class="soft-btn admin-only" href="/download/report" target="_blank" rel="noopener">Unduh Laporan</a>
           <button id="refresh-btn" class="soft-btn" type="button">Refresh</button>
@@ -190,6 +201,11 @@
                 <span>Bayar</span>
                 <input id="sale-paid" type="number" min="0" step="100" value="0">
               </label>
+              <div id="qris-container" class="span-2 hidden" style="text-align: center; padding: 15px; border: var(--glass-border); border-radius: 12px; background: rgba(255, 255, 255, 0.02); margin-bottom: 10px;">
+                <p style="margin: 0 0 10px 0; font-weight: 600; font-size: 13px;">Scan QRIS untuk Pembayaran</p>
+                <img id="qris-img" src="" alt="QRIS Code" style="max-width: 160px; max-height: 160px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: inline-block;">
+                <p id="qris-empty-msg" class="hint" style="margin: 10px 0 0 0; font-size: 12px; color: var(--danger); font-weight: bold; display: none;">QRIS belum diunggah oleh developer.</p>
+              </div>
               <div class="summary-box span-2">
                 <div><span>Subtotal</span><strong id="sale-subtotal">Rp 0</strong></div>
                 <div><span>Total</span><strong id="sale-total">Rp 0</strong></div>
@@ -638,6 +654,15 @@
             <label>
               <span>Nama toko di nota</span>
               <input id="settings-receipt-store-name" required>
+            </label>
+            <label class="span-2" id="settings-qris-label" style="display: none;">
+              <span>Upload QRIS Pembayaran (Hanya Developer)</span>
+              <input type="file" id="settings-qris-file" accept="image/*" style="display:none;">
+              <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+                <button type="button" class="secondary-btn" id="settings-qris-upload-btn">Pilih Gambar QRIS</button>
+                <img id="settings-qris-preview" src="" alt="Preview QRIS" style="max-height: 80px; max-width: 80px; border-radius: 6px; display: none; border: var(--glass-border); object-fit: contain;">
+                <button type="button" class="danger-btn hidden" id="settings-qris-remove-btn" style="padding: 6px 12px; font-size: 12px; min-height: auto;">Hapus QRIS</button>
+              </div>
             </label>
             <button class="primary-btn span-2" type="submit">Simpan Pengaturan</button>
           </form>

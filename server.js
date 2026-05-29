@@ -1310,7 +1310,7 @@ function receiptHtml(data, saleId) {
   const rows = items
     .map(
       (item) =>
-        `<tr><td>${xmlEscape(item.name)}</td><td>${item.qty}</td><td>${rupiah(item.price)}</td><td>${rupiah(
+        `<tr><td style="word-break: break-word; vertical-align: top;">${xmlEscape(item.name)}</td><td style="text-align: center; vertical-align: top;">${item.qty}</td><td style="text-align: right; vertical-align: top;">${rupiah(item.price)}</td><td style="text-align: right; vertical-align: top;">${rupiah(
           item.subtotal,
         )}</td></tr>`,
     )
@@ -1321,12 +1321,15 @@ function receiptHtml(data, saleId) {
   <meta charset="utf-8">
   <title>Nota ${xmlEscape(sale.invoice_no)}</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 320px; margin: 0 auto; color: #111827; }
+    body { font-family: Arial, sans-serif; max-width: 320px; margin: 0 auto; color: #111827; padding: 10px; }
     h1 { font-size: 18px; margin: 18px 0 4px; text-align: center; }
     .meta { font-size: 12px; text-align: center; color: #4b5563; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; table-layout: fixed; }
     td, th { padding: 5px 0; border-bottom: 1px dashed #d1d5db; text-align: left; }
-    td:nth-child(2), td:nth-child(3), td:nth-child(4), th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align: right; }
+    th:nth-child(1), td:nth-child(1) { width: 46%; }
+    th:nth-child(2), td:nth-child(2) { width: 10%; text-align: center; }
+    th:nth-child(3), td:nth-child(3) { width: 22%; text-align: right; }
+    th:nth-child(4), td:nth-child(4) { width: 22%; text-align: right; }
     .total { margin-top: 10px; font-size: 13px; }
     .total div { display: flex; justify-content: space-between; padding: 3px 0; }
     .grand { font-weight: 700; border-top: 1px solid #111827; margin-top: 6px; padding-top: 6px !important; }
@@ -1394,26 +1397,30 @@ async function receiptPdf(data, saleId) {
   // Items table
   doc.fontSize(7);
   const tableTop = doc.y;
-  doc.text('Barang', 10, tableTop);
-  doc.text('Qty', 120, tableTop);
-  doc.text('Harga', 150, tableTop);
-  doc.text('Jumlah', 180, tableTop);
+  doc.text('Barang', 10, tableTop, { width: 95 });
+  doc.text('Qty', 105, tableTop, { width: 20, align: 'center' });
+  doc.text('Harga', 125, tableTop, { width: 42, align: 'right' });
+  doc.text('Jumlah', 167, tableTop, { width: 49, align: 'right' });
   
   doc.moveDown(0.5);
-  doc.strokeColor('#000').lineWidth(0.5).moveTo(10, doc.y).lineTo(210, doc.y).stroke();
+  doc.strokeColor('#000').lineWidth(0.5).moveTo(10, doc.y).lineTo(216, doc.y).stroke();
   doc.moveDown(0.5);
   
   items.forEach(item => {
     const y = doc.y;
-    doc.text(item.name.substring(0, 20), 10, y);
-    doc.text(item.qty.toString(), 120, y);
-    doc.text(rupiah(item.price), 150, y);
-    doc.text(rupiah(item.subtotal), 180, y);
-    doc.moveDown();
+    doc.text(item.name, 10, y, { width: 95 });
+    const nameEndY = doc.y;
+    
+    doc.text(item.qty.toString(), 105, y, { width: 20, align: 'center' });
+    doc.text(rupiah(item.price), 125, y, { width: 42, align: 'right' });
+    doc.text(rupiah(item.subtotal), 167, y, { width: 49, align: 'right' });
+    
+    doc.y = Math.max(nameEndY, doc.y);
+    doc.moveDown(0.4);
   });
   
   doc.moveDown();
-  doc.strokeColor('#000').lineWidth(0.5).moveTo(10, doc.y).lineTo(210, doc.y).stroke();
+  doc.strokeColor('#000').lineWidth(0.5).moveTo(10, doc.y).lineTo(216, doc.y).stroke();
   doc.moveDown();
   
   // Totals
@@ -1468,12 +1475,12 @@ async function stockOpnamePdf(data, soId) {
   
   const tableTop = doc.y;
   doc.font('Helvetica-Bold');
-  doc.text('Barang', 40, tableTop);
-  doc.text('SKU', 210, tableTop);
-  doc.text('Sistem', 290, tableTop, { width: 50, align: 'right' });
-  doc.text('Fisik', 350, tableTop, { width: 50, align: 'right' });
-  doc.text('Selisih', 410, tableTop, { width: 60, align: 'right' });
-  doc.text('Nilai', 480, tableTop, { width: 80, align: 'right' });
+  doc.text('Barang', 40, tableTop, { width: 160 });
+  doc.text('SKU', 200, tableTop, { width: 80 });
+  doc.text('Sistem', 280, tableTop, { width: 50, align: 'right' });
+  doc.text('Fisik', 330, tableTop, { width: 50, align: 'right' });
+  doc.text('Selisih', 380, tableTop, { width: 50, align: 'right' });
+  doc.text('Nilai', 430, tableTop, { width: 125, align: 'right' });
   doc.moveDown(0.3);
   doc.strokeColor('#ccc').lineWidth(0.5).moveTo(40, doc.y).lineTo(555, doc.y).stroke();
   doc.moveDown(0.2);
@@ -1482,12 +1489,18 @@ async function stockOpnamePdf(data, soId) {
   items.forEach((item) => {
     const y = doc.y;
     doc.text(item.name, 40, y, { width: 160 });
-    doc.text(item.sku || '-', 210, y, { width: 80 });
-    doc.text(String(item.system_stock), 290, y, { width: 50, align: 'right' });
-    doc.text(String(item.physical_stock), 350, y, { width: 50, align: 'right' });
-    doc.text(`${item.variance >= 0 ? '+' : ''}${item.variance}`, 410, y, { width: 60, align: 'right' });
-    doc.text(rupiah(item.variance_value), 480, y, { width: 80, align: 'right' });
-    doc.moveDown();
+    const nameEndY = doc.y;
+    
+    doc.text(item.sku || '-', 200, y, { width: 80 });
+    const skuEndY = doc.y;
+    
+    doc.text(String(item.system_stock), 280, y, { width: 50, align: 'right' });
+    doc.text(String(item.physical_stock), 330, y, { width: 50, align: 'right' });
+    doc.text(`${item.variance >= 0 ? '+' : ''}${item.variance}`, 380, y, { width: 50, align: 'right' });
+    doc.text(rupiah(item.variance_value), 430, y, { width: 125, align: 'right' });
+    
+    doc.y = Math.max(nameEndY, skuEndY, doc.y);
+    doc.moveDown(0.4);
   });
   
   if (String(history.notes || '').trim()) {
@@ -1565,19 +1578,16 @@ async function handleGet(req, res, url) {
   if (url.pathname === "/download/so-template") {
     requireAdmin(req, url);
     const data = readDatabaseCsv();
-    const products = (data.Products || []).map(p => ({
-      sku: p.sku || "",
-      stock: asNumber(p.stock)
-    }));
     
     const buffer = buildXlsx([
       {
         name: "Stock Opname",
-        headers: ["SKU", "Stok Sistem", "Stok Fisik"],
-        rows: products.map(p => ({
-          "SKU": p.sku,
-          "Stok Sistem": p.stock,
-          "Stok Fisik": p.stock
+        headers: ["Item Name", "Brand", "System Quantity", "Physical Quantity"],
+        rows: (data.Products || []).map(p => ({
+          "Item Name": p.name || "",
+          "Brand": "",
+          "System Quantity": asNumber(p.stock),
+          "Physical Quantity": asNumber(p.stock)
         }))
       }
     ]);
@@ -1756,10 +1766,9 @@ async function handlePost(req, res, url) {
   }
   if (url.pathname === "/api/settings") {
     const user = requireDeveloper(req, url);
-    // Owner explicitly forbidden from accessing Settings
-    if (isOwner(user)) throw new AppError(403, "Owner tidak diizinkan mengakses Pengaturan.");
+    if (!isDeveloper(user)) throw new AppError(403, "Hanya role developer yang diizinkan mengubah Pengaturan.");
     const payload = await readBody(req);
-    const allowed = ["store_name", "store_subtitle", "app_name", "receipt_store_name"];
+    const allowed = ["store_name", "store_subtitle", "app_name", "receipt_store_name", "qris_image"];
     const data = readDatabaseCsv();
     const timestamp = nowIso();
     allowed.forEach((key) => {
@@ -2105,10 +2114,17 @@ async function handlePost(req, res, url) {
 
       const header = (rows[0] || []).map((cell) => String(cell || "").trim().toLowerCase());
       const skuIndex = header.findIndex((name) => ["sku", "kode", "kode barang", "kode produk", "product code", "barcode"].includes(name));
-      const physicalIndex = header.findIndex((name) => ["stok fisik", "physical stock", "physical_stock", "stock fisik", "stock_physical", "physical", "qty fisik", "jumlah fisik"].includes(name));
+      const nameIndex = header.findIndex((name) => ["item name", "nama", "nama barang", "barang", "nama produk", "product name"].includes(name));
+      const physicalIndex = header.findIndex((name) => [
+        "stok fisik", "physical stock", "physical_stock", "stock fisik", "stock_physical", 
+        "physical", "qty fisik", "jumlah fisik", "physical quantity"
+      ].includes(name));
 
-      if (skuIndex < 0 || physicalIndex < 0) {
-        throw new AppError(400, "Format file SO tidak sesuai. Kolom SKU dan Stok Fisik dibutuhkan.");
+      if (skuIndex < 0 && nameIndex < 0) {
+        throw new AppError(400, "Format file SO tidak sesuai. Kolom SKU atau Nama Barang dibutuhkan.");
+      }
+      if (physicalIndex < 0) {
+        throw new AppError(400, "Format file SO tidak sesuai. Kolom Stok Fisik / Physical Quantity dibutuhkan.");
       }
 
       // Skip header row, process data rows
@@ -2120,44 +2136,55 @@ async function handlePost(req, res, url) {
           return;
         }
 
-        const rawSku = row[skuIndex];
-        const normalizedFileSku = normalizeSku(rawSku);
+        let product;
+        let identStr = "";
 
-        if (!normalizedFileSku) {
-          errors.push(`Baris ${rowIndex}: SKU kosong`);
-          return;
+        if (skuIndex >= 0) {
+          const rawSku = row[skuIndex];
+          const normalizedFileSku = normalizeSku(rawSku);
+          if (normalizedFileSku) {
+            product = (data.Products || []).find((p) => normalizeSku(p.sku) === normalizedFileSku);
+            identStr = `SKU "${rawSku}"`;
+          }
         }
 
-        const product = (data.Products || []).find((p) => normalizeSku(p.sku) === normalizedFileSku);
+        if (!product && nameIndex >= 0) {
+          const rawName = String(row[nameIndex] || "").trim().toLowerCase();
+          if (rawName) {
+            product = (data.Products || []).find((p) => String(p.name || "").trim().toLowerCase() === rawName);
+            identStr = `Nama Barang "${row[nameIndex]}"`;
+          }
+        }
+
         if (!product) {
-          errors.push(`Baris ${rowIndex}: Barang dengan SKU "${rawSku}" tidak ditemukan`);
+          errors.push(`Baris ${rowIndex}: Barang dengan ${identStr || "kombinasi identitas kosong"} tidak ditemukan`);
           return;
         }
 
         const rawPhysical = row[physicalIndex];
         if (rawPhysical === undefined || rawPhysical === null || String(rawPhysical).trim() === "") {
-          errors.push(`Baris ${rowIndex}: Stok fisik untuk SKU "${product.sku}" tidak boleh kosong`);
+          errors.push(`Baris ${rowIndex}: Stok fisik untuk "${product.name}" tidak boleh kosong`);
           return;
         }
 
         const physicalStock = Number(rawPhysical);
         if (isNaN(physicalStock) || !Number.isFinite(physicalStock)) {
-          errors.push(`Baris ${rowIndex}: Stok fisik untuk SKU "${product.sku}" harus berupa angka (ditemukan: "${rawPhysical}")`);
+          errors.push(`Baris ${rowIndex}: Stok fisik untuk "${product.name}" harus berupa angka (ditemukan: "${rawPhysical}")`);
           return;
         }
 
         if (physicalStock < 0) {
-          errors.push(`Baris ${rowIndex}: Stok fisik untuk SKU "${product.sku}" tidak boleh negatif (${physicalStock})`);
+          errors.push(`Baris ${rowIndex}: Stok fisik untuk "${product.name}" tidak boleh negatif (${physicalStock})`);
           return;
         }
 
-        // Accumulate physical stock if SKU appears multiple times
+        // Accumulate physical stock if product appears multiple times
         if (physical_inputs[product.id] !== undefined) {
           physical_inputs[product.id] += physicalStock;
         } else {
           physical_inputs[product.id] = physicalStock;
+          processed++;
         }
-        processed++;
       });
 
       return sendJson(res, {
