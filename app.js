@@ -245,6 +245,24 @@ function applySettings() {
   }
 
   renderDeveloperSettings();
+
+  if ($("#settings-sheets-url")) {
+    const sheetsUrl = settings.google_sheets_url || "";
+    const spreadsheetId = settings.google_spreadsheet_id || "";
+    $("#settings-sheets-url").value = sheetsUrl;
+    $("#settings-sheets-id").value = spreadsheetId;
+
+    if (sheetsUrl && spreadsheetId) {
+      $("#sheets-connection-status").classList.remove("hidden");
+      $("#settings-sheets-link").href = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
+      $("#sheets-sync-products-btn").disabled = false;
+      $("#sheets-push-products-btn").disabled = false;
+    } else {
+      $("#sheets-connection-status").classList.add("hidden");
+      $("#sheets-sync-products-btn").disabled = true;
+      $("#sheets-push-products-btn").disabled = true;
+    }
+  }
 }
 
 function activateView(view) {
@@ -1904,6 +1922,97 @@ function bindEvents() {
       showToast("Semua user berhasil dikick.");
     } catch (error) {
       showToast(error.message, true);
+    }
+  });
+
+  // Google Sheets Event Listeners
+  $("#sheets-save-config-btn").addEventListener("click", async () => {
+    const url = $("#settings-sheets-url").value.trim();
+    if (!url) return showToast("URL Google Apps Script wajib diisi.", true);
+    
+    try {
+      const payload = await api("/api/sheets/save-config", {
+        method: "POST",
+        body: { google_sheets_url: url, google_spreadsheet_id: $("#settings-sheets-id").value.trim() }
+      });
+      if (payload.success) {
+        state.settings = { ...state.settings, ...payload.settings };
+        applySettings();
+        showToast("Konfigurasi Google Sheets berhasil disimpan.");
+      }
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  $("#sheets-setup-btn").addEventListener("click", async () => {
+    const url = $("#settings-sheets-url").value.trim();
+    if (!url) return showToast("URL Google Apps Script wajib diisi.", true);
+    
+    if (!confirm("Apakah Anda yakin ingin membuat Spreadsheet baru di Google Sheets? Prosedur ini akan menginisialisasi lembar kerja baru.")) return;
+    
+    const originalText = $("#sheets-setup-btn").textContent;
+    $("#sheets-setup-btn").textContent = "Memproses...";
+    $("#sheets-setup-btn").disabled = true;
+
+    try {
+      const payload = await api("/api/sheets/setup", {
+        method: "POST",
+        body: { google_sheets_url: url }
+      });
+      if (payload.success) {
+        state.settings.google_sheets_url = url;
+        state.settings.google_spreadsheet_id = payload.spreadsheet.spreadsheetId;
+        applySettings();
+        showToast("Google Sheets berhasil dibuat dan diinisialisasi.");
+        window.open(payload.spreadsheet.url, "_blank");
+      }
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      $("#sheets-setup-btn").textContent = originalText;
+      $("#sheets-setup-btn").disabled = false;
+    }
+  });
+
+  $("#sheets-sync-products-btn").addEventListener("click", async () => {
+    if (!confirm("Tarik data barang dari Google Sheets? Ini akan memperbarui atau membuat barang baru di database lokal.")) return;
+    
+    const originalText = $("#sheets-sync-products-btn").textContent;
+    $("#sheets-sync-products-btn").textContent = "Menyinkronkan...";
+    $("#sheets-sync-products-btn").disabled = true;
+
+    try {
+      const payload = await api("/api/sheets/sync-products", { method: "POST" });
+      if (payload.success) {
+        await loadData();
+        showToast(`Sinkronisasi sukses! ${payload.updatedCount} barang diupdate, ${payload.createdCount} barang baru ditambahkan.`);
+      }
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      $("#sheets-sync-products-btn").textContent = originalText;
+      $("#sheets-sync-products-btn").disabled = false;
+    }
+  });
+
+  $("#sheets-push-products-btn").addEventListener("click", async () => {
+    if (!confirm("Push semua data barang lokal ke Google Sheets? Ini akan menimpa data barang yang ada di Google Sheets.")) return;
+    
+    const originalText = $("#sheets-push-products-btn").textContent;
+    $("#sheets-push-products-btn").textContent = "Mengirim...";
+    $("#sheets-push-products-btn").disabled = true;
+
+    try {
+      const payload = await api("/api/sheets/push-products", { method: "POST" });
+      if (payload.success) {
+        showToast(`Berhasil mengirim ${payload.count} barang ke Google Sheets.`);
+      }
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      $("#sheets-push-products-btn").textContent = originalText;
+      $("#sheets-push-products-btn").disabled = false;
     }
   });
 }

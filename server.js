@@ -1044,6 +1044,35 @@ function saveData(data) {
   writeXlsx(data);
 }
 
+function triggerGoogleSheetsSync(data, action, payload) {
+  const sheetsUrl = getSetting(data, "google_sheets_url");
+  const spreadsheetId = getSetting(data, "google_spreadsheet_id");
+  if (!sheetsUrl) return; // Not configured
+
+  fetch(sheetsUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action,
+      spreadsheetId,
+      ...payload
+    })
+  })
+  .then(res => res.json())
+  .then(json => {
+    if (json.success) {
+      console.log(`Google Sheets sync success for action: ${action}`);
+    } else {
+      console.error(`Google Sheets sync failed for action ${action}:`, json.error);
+    }
+  })
+  .catch(err => {
+    console.error(`Google Sheets sync error for action ${action}:`, err);
+  });
+}
+
 function defaultData() {
   const timestamp = nowIso();
   return {
@@ -1705,6 +1734,7 @@ async function handlePost(req, res, url) {
     if (!product.name) throw new AppError(400, "Nama barang wajib diisi.");
     data.Products.push(product);
     saveData(data);
+    triggerGoogleSheetsSync(data, "syncProducts", { products: data.Products });
     return sendJson(res, { product });
   }
   if (url.pathname === "/api/products/import") {
@@ -1863,6 +1893,7 @@ async function handlePost(req, res, url) {
     data.Sales.push(sale);
     data.SaleItems.push(...saleItems);
     saveData(data);
+    triggerGoogleSheetsSync(data, "syncSale", { sale, items: saleItems });
     return sendJson(res, { sale, items: saleItems });
   }
   const cancelSaleMatch = url.pathname.match(/^\/api\/sales\/([^/]+)\/cancel$/);
@@ -2197,6 +2228,185 @@ async function handlePost(req, res, url) {
       throw new AppError(400, `Import gagal: ${error.message}`);
     }
   }
+
+  if (url.pathname === "/api/sheets/save-config") {
+    requireAdmin(req, url);
+    const payload = await readBody(req);
+    const data = readDatabaseCsv();
+    
+    // Save settings
+    const sheetsUrl = String(payload.google_sheets_url || "").trim();
+    const spreadsheetId = String(payload.google_spreadsheet_id || "").trim();
+    
+    let urlSetting = data.Settings.find(s => s.key === "google_sheets_url");
+    if (!urlSetting) {
+      urlSetting = { key: "google_sheets_url", value: sheetsUrl, updated_at: nowIso() };
+      data.Settings.push(urlSetting);
+    } else {
+      urlSetting.value = sheetsUrl;
+      urlSetting.updated_at = nowIso();
+    }
+    
+    let idSetting = data.Settings.find(s => s.key === "google_spreadsheet_id");
+    if (!idSetting) {
+      idSetting = { key: "google_spreadsheet_id", value: spreadsheetId, updated_at: nowIso() };
+      data.Settings.push(idSetting);
+    } else {
+      idSetting.value = spreadsheetId;
+      idSetting.updated_at = nowIso();
+    }
+    
+    saveData(data);
+    return sendJson(res, { success: true, settings: settingsObject(data) });
+  }
+
+  if (url.pathname === "/api/sheets/setup") {
+    requireAdmin(req, url);
+    const payload = await readBody(req);
+    const data = readDatabaseCsv();
+    const sheetsUrl = String(payload.google_sheets_url || "").trim();
+    if (!sheetsUrl) throw new AppError(400, "URL Google Apps Script wajib diisi.");
+
+    const title = getSetting(data, "store_name", "AppSir Database POS") + " Spreadsheet";
+
+    try {
+      // Call Google Apps Script to create spreadsheet
+      const response = await fetch(sheetsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createSpreadsheet", title })
+      });
+      const json = await response.json();
+      if (!json.success) throw new Error(json.error || "Gagal membuat spreadsheet");
+
+      const spreadsheetId = json.data.spreadsheetId;
+      const spreadsheetUrl = json.data.url;
+
+      // Save spreadsheet ID to Settings
+      let idSetting = data.Settings.find(s => s.key === "google_spreadsheet_id");
+      if (!idSetting) {
+        data.Settings.push({ key: "google_spreadsheet_id", value: spreadsheetId, updated_at: nowIso() });
+      } else {
+        idSetting.value = spreadsheetId;
+        idSetting.updated_at = nowIso();
+      }
+
+      let urlSetting = data.Settings.find(s => s.key === "google_sheets_url");
+      if (!urlSetting) {
+        data.Settings.push({ key: "google_sheets_url", value: sheetsUrl, updated_at: nowIso() });
+      } else {
+        urlSetting.value = sheetsUrl;
+        urlSetting.updated_at = nowIso();
+      }
+
+      saveData(data);
+
+      // Push existing products and suppliers to Google Sheets immediately
+      triggerGoogleSheetsSync(data, "syncProducts", { products: data.Products });
+      triggerGoogleSheetsSync(data, "syncSuppliers", { suppliers: data.Suppliers });
+
+      return sendJson(res, { success: true, spreadsheet: json.data });
+    } catch (err) {
+      throw new AppError(500, `Gagal berkomunikasi dengan Google Apps Script: ${err.message}`);
+    }
+  }
+
+  if (url.pathname === "/api/sheets/sync-products") {
+    requireAdmin(req, url);
+    const data = readDatabaseCsv();
+    const sheetsUrl = getSetting(data, "google_sheets_url");
+    const spreadsheetId = getSetting(data, "google_spreadsheet_id");
+    if (!sheetsUrl || !spreadsheetId) throw new AppError(400, "Google Sheets belum terkonfigurasi.");
+
+    try {
+      const response = await fetch(`${sheetsUrl}?action=getProducts&spreadsheetId=${spreadsheetId}`);
+      const json = await response.json();
+      if (!json.success) throw new Error(json.error || "Gagal mengambil data produk dari Sheets");
+
+      const sheetsProducts = json.data || [];
+      let updatedCount = 0;
+      let createdCount = 0;
+
+      sheetsProducts.forEach(sheetProduct => {
+        if (!sheetProduct.name) return; // Skip invalid row
+
+        // Find match locally by ID or SKU
+        let localProduct = null;
+        if (sheetProduct.id) {
+          localProduct = data.Products.find(p => String(p.id) === String(sheetProduct.id));
+        }
+        if (!localProduct && sheetProduct.sku) {
+          localProduct = data.Products.find(p => normalizeSku(p.sku) === normalizeSku(sheetProduct.sku));
+        }
+
+        if (localProduct) {
+          // Update details from sheet
+          localProduct.sku = sheetProduct.sku || localProduct.sku;
+          localProduct.name = sheetProduct.name;
+          localProduct.category = sheetProduct.category || localProduct.category;
+          localProduct.unit = sheetProduct.unit || localProduct.unit;
+          localProduct.stock = asNumber(sheetProduct.stock);
+          localProduct.min_stock = asNumber(sheetProduct.min_stock);
+          localProduct.buy_price = asNumber(sheetProduct.buy_price);
+          localProduct.sell_price = asNumber(sheetProduct.sell_price);
+          localProduct.supplier_id = String(sheetProduct.supplier_id || "");
+          localProduct.updated_at = nowIso();
+          updatedCount++;
+        } else {
+          // Create new local product
+          const newProduct = {
+            id: sheetProduct.id ? normalizeId(sheetProduct.id) : nextId(data.Products),
+            sku: sheetProduct.sku || generateSKU(data, sheetProduct.category),
+            name: String(sheetProduct.name).trim(),
+            category: String(sheetProduct.category || "").trim(),
+            unit: String(sheetProduct.unit || "pcs").trim(),
+            stock: asNumber(sheetProduct.stock),
+            min_stock: asNumber(sheetProduct.min_stock),
+            buy_price: asNumber(sheetProduct.buy_price),
+            sell_price: asNumber(sheetProduct.sell_price),
+            supplier_id: String(sheetProduct.supplier_id || ""),
+            updated_at: nowIso()
+          };
+          data.Products.push(newProduct);
+          createdCount++;
+        }
+      });
+
+      if (updatedCount > 0 || createdCount > 0) {
+        saveData(data);
+      }
+
+      return sendJson(res, { success: true, updatedCount, createdCount });
+    } catch (err) {
+      throw new AppError(500, `Gagal sinkronisasi produk: ${err.message}`);
+    }
+  }
+
+  if (url.pathname === "/api/sheets/push-products") {
+    requireAdmin(req, url);
+    const data = readDatabaseCsv();
+    const sheetsUrl = getSetting(data, "google_sheets_url");
+    const spreadsheetId = getSetting(data, "google_spreadsheet_id");
+    if (!sheetsUrl || !spreadsheetId) throw new AppError(400, "Google Sheets belum terkonfigurasi.");
+
+    try {
+      const response = await fetch(sheetsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "syncProducts",
+          spreadsheetId,
+          products: data.Products
+        })
+      });
+      const json = await response.json();
+      if (!json.success) throw new Error(json.error || "Gagal sinkronisasi produk");
+
+      return sendJson(res, { success: true, count: data.Products.length });
+    } catch (err) {
+      throw new AppError(500, `Gagal push produk: ${err.message}`);
+    }
+  }
   
   throw new AppError(404, "Endpoint tidak ditemukan.");
 }
@@ -2219,6 +2429,7 @@ async function handlePut(req, res, url) {
     });
     product.updated_at = nowIso();
     saveData(data);
+    triggerGoogleSheetsSync(data, "syncProducts", { products: data.Products });
     return sendJson(res, { product });
   }
   if (supplierMatch) {
@@ -2378,6 +2589,7 @@ async function handleDelete(req, res, url) {
     const data = readDatabaseCsv();
     data.Products = data.Products.filter((row) => String(row.id) !== String(id));
     saveData(data);
+    triggerGoogleSheetsSync(data, "syncProducts", { products: data.Products });
     return sendJson(res, { ok: true });
   }
   if (supplierMatch) {
